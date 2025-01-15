@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Rational Factorizer (Copy Pairs)</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      padding: 20px;
+      max-width: 1200px;
+    }
+    input {
+      margin: 5px 0;
+      padding: 5px;
+      width: 100%;
+      max-width: 300px;
+    }
+    button {
+      margin: 10px 0;
+      padding: 10px;
+      cursor: pointer;
+    }
+    .results {
+      margin-top: 20px;
+    }
+    .tables-container {
+      display: flex;
+      justify-content: space-between; /* space them evenly */
+      flex-wrap: wrap;               /* allow wrapping if needed */
+    }
+    table {
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      width: 18%; /* ~5 tables across if we want them spaced */
+      min-width: 150px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 5px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background-color: #f9f9f9;
+    }
+  </style>
+</head>
+<body>
+  <h1>Rational Factorizer</h1>
+  <p>Enter a number and the maximum denominator for rational factors.</p>
+  <input id="number" type="number" placeholder="Enter number (e.g., 32)" required />
+  <input id="maxDenominator" type="number" placeholder="Enter max denominator (e.g., 5)" required />
+  <button onclick="factorize()">Factorize</button>
+
+  <!-- We'll add a "Copy Factor Pairs" button dynamically if we find factor pairs -->
+  <div class="results" id="results"></div>
+
+  <script>
+    function gcd(a, b) {
+      a = Math.abs(a);
+      b = Math.abs(b);
+      while (b !== 0) {
+        const temp = b;
+        b = a % b;
+        a = temp;
+      }
+      return a;
+    }
+
+    function reduceFraction(numerator, denominator) {
+      const divisor = gcd(numerator, denominator);
+      return {
+        numerator: numerator / divisor,
+        denominator: denominator / divisor
+      };
+    }
+
+    /**
+     * Converts an improper fraction (e.g., "3/2") to a mixed fraction (e.g., "1 1/2").
+     * If the fraction is proper (e.g., "1/2"), returns "1/2".
+     * If there's no remainder (e.g., "2/1"), returns "2".
+     */
+    function formatFractionAsMixed(numerator, denominator) {
+      const { numerator: n, denominator: d } = reduceFraction(numerator, denominator);
+      const isNegative = (n < 0 && d > 0) || (n > 0 && d < 0);
+      const absN = Math.abs(n);
+      const absD = Math.abs(d);
+
+      const integerPart = Math.floor(absN / absD);
+      const remainder = absN % absD;
+
+      // If no remainder, it's just an integer
+      if (remainder === 0) {
+        return (isNegative ? "-" : "") + integerPart.toString();
+      }
+
+      // If there's an integer part, e.g. "1 1/2"
+      if (integerPart > 0) {
+        return (isNegative ? "-" : "") + integerPart + " " + remainder + "/" + absD;
+      } else {
+        // e.g. "1/2" if integerPart == 0
+        return (isNegative ? "-" : "") + remainder + "/" + absD;
+      }
+    }
+
+    /**
+     * Parses a mixed fraction string back to { numerator, denominator } in reduced form,
+     * so we can compare or re-format if needed.
+     */
+    function parseMixedFraction(str) {
+      if (str.includes(" ")) {
+        // e.g. "1 1/2"
+        const [wholeStr, fracStr] = str.split(" ");
+        const [numStr, denStr] = fracStr.split("/");
+        const whole = parseInt(wholeStr, 10);
+        const num = parseInt(numStr, 10);
+        const den = parseInt(denStr, 10);
+        const improperNum = whole * den + num;
+        return reduceFraction(improperNum, den);
+      } else if (str.includes("/")) {
+        // e.g. "3/2"
+        const [numStr, denStr] = str.split("/");
+        const num = parseInt(numStr, 10);
+        const den = parseInt(denStr, 10);
+        return reduceFraction(num, den);
+      } else {
+        // e.g. "4"
+        const integerVal = parseInt(str, 10);
+        return reduceFraction(integerVal, 1);
+      }
+    }
+
+    /**
+     * Our custom comparator for sorting:
+     *  1) Compare sum of denominators
+     *  2) If tie, compare numeric value of factor1
+     *  3) If still tie, compare numeric value of factor2
+     */
+    function compareFactorPairs(a, b) {
+      const aF1 = parseMixedFraction(a.factor);
+      const aF2 = parseMixedFraction(a.coFactor);
+      const bF1 = parseMixedFraction(b.factor);
+      const bF2 = parseMixedFraction(b.coFactor);
+
+      const aDenSum = aF1.denominator + aF2.denominator;
+      const bDenSum = bF1.denominator + bF2.denominator;
+
+      if (aDenSum !== bDenSum) {
+        return aDenSum - bDenSum;  // smaller sum => earlier
+      } else {
+        // same sum => compare numeric values
+        const aVal1 = aF1.numerator / aF1.denominator;
+        const bVal1 = bF1.numerator / bF1.denominator;
+        if (aVal1 !== bVal1) {
+          return aVal1 - bVal1;
+        } else {
+          const aVal2 = aF2.numerator / aF2.denominator;
+          const bVal2 = bF2.numerator / bF2.denominator;
+          return aVal2 - bVal2;
+        }
+      }
+    }
+
+    // We'll store the string for copying here
+    let factorPairsString = "";
+
+    function factorize() {
+      const numberInput = document.getElementById("number").value;
+      const maxDenominatorInput = document.getElementById("maxDenominator").value;
+      const resultsDiv = document.getElementById("results");
+
+      const number = parseInt(numberInput);
+      const maxDenominator = parseInt(maxDenominatorInput);
+
+      if (isNaN(number) || isNaN(maxDenominator) || maxDenominator <= 0) {
+        resultsDiv.innerHTML = "<p>Please enter valid inputs.</p>";
+        return;
+      }
+
+      let factors = [];
+      let seenFactors = new Set();
+
+      // Factor-finding logic
+      for (let denominator1 = 1; denominator1 <= maxDenominator; denominator1++) {
+        for (let numerator1 = 1; numerator1 <= number * denominator1; numerator1++) {
+          const factor1 = numerator1 / denominator1;
+
+          for (let denominator2 = 1; denominator2 <= maxDenominator; denominator2++) {
+            const targetFactor2 = number / factor1;
+            const numerator2 = Math.round(targetFactor2 * denominator2);
+            const factor2 = numerator2 / denominator2;
+
+            if (Math.abs(factor1 * factor2 - number) < 1e-10) {
+              if (factor1 === 1 || factor2 === 1) continue;
+              if (factor1 >= number || factor2 >= number) continue;
+
+              const reduced1 = reduceFraction(numerator1, denominator1);
+              const reduced2 = reduceFraction(numerator2, denominator2);
+
+              const smaller = Math.min(factor1, factor2);
+              const larger = Math.max(factor1, factor2);
+              const key = `${smaller}-${larger}`;
+              if (!seenFactors.has(key)) {
+                seenFactors.add(key);
+                factors.push({
+                  factor: formatFractionAsMixed(reduced1.numerator, reduced1.denominator),
+                  coFactor: formatFractionAsMixed(reduced2.numerator, reduced2.denominator),
+                });
+              }
+            }
+          }
+        }
+      }
+
+      const totalResults = factors.length;
+      if (totalResults === 0) {
+        resultsDiv.innerHTML = `<p>No non-trivial rational factors found for ${number} with max denominator ${maxDenominator}.</p>`;
+        return;
+      }
+
+      // Sort using our custom comparator
+      factors.sort(compareFactorPairs);
+
+      // Build the string for copying
+      // e.g. "{(2,16),(4,8),(1/2,3 1/2),...}"
+      factorPairsString = "{" + factors
+        .map(f => `(${f.factor},${f.coFactor})`)
+        .join(",") 
+        + "}";
+
+      // Determine columns (max 5) and rows
+      let columns = 0;
+      let rows = 0;
+
+      if (totalResults <= 25) {
+        columns = Math.ceil(totalResults / 5);
+        rows = 5;
+      } else {
+        columns = 5;
+        const leftover = totalResults - 25;
+        rows = 5 + Math.ceil(leftover / 5);
+      }
+
+      // Build a 2D array for the table data
+      const tableData = Array.from({ length: columns }, () =>
+        Array(rows).fill(null)
+      );
+
+      // Fill tableData column-by-column
+      let index = 0;
+      for (let c = 0; c < columns; c++) {
+        for (let r = 0; r < rows; r++) {
+          if (index < totalResults) {
+            tableData[c][r] = factors[index];
+            index++;
+          }
+        }
+      }
+
+      // Clear and populate results
+      resultsDiv.innerHTML = `<h2>Rational factors of ${number}:</h2>`;
+
+      // Add a "Copy Factor Pairs" button
+      const copyButton = document.createElement("button");
+      copyButton.textContent = "Copy Factor Pairs";
+      copyButton.onclick = copyPairsToClipboard;
+      resultsDiv.appendChild(copyButton);
+
+      // Container for the tables
+      const container = document.createElement("div");
+      container.className = "tables-container";
+
+      // Build each table
+      for (let c = 0; c < columns; c++) {
+        const table = document.createElement("table");
+        const thead = document.createElement("thead");
+        const headerRow = document.createElement("tr");
+        const th1 = document.createElement("th");
+        th1.textContent = `Factor`;
+        const th2 = document.createElement("th");
+        th2.textContent = `Co-Factor`;
+        headerRow.appendChild(th1);
+        headerRow.appendChild(th2);
+        thead.appendChild(headerRow);
+
+        const tbody = document.createElement("tbody");
+        for (let r = 0; r < rows; r++) {
+          const row = document.createElement("tr");
+          const cellFactor = document.createElement("td");
+          const cellCoFactor = document.createElement("td");
+
+          const pair = tableData[c][r];
+          if (pair) {
+            cellFactor.textContent = pair.factor;
+            cellCoFactor.textContent = pair.coFactor;
+          } else {
+            cellFactor.textContent = "";
+            cellCoFactor.textContent = "";
+          }
+          row.appendChild(cellFactor);
+          row.appendChild(cellCoFactor);
+          tbody.appendChild(row);
+        }
+
+        table.appendChild(thead);
+        table.appendChild(tbody);
+        container.appendChild(table);
+      }
+
+      resultsDiv.appendChild(container);
+    }
+
+    /**
+     * Copies the factor pairs string to the clipboard.
+     */
+    function copyPairsToClipboard() {
+      if (!factorPairsString) {
+        return; // no factors to copy
+      }
+      // Use the modern clipboard API
+      navigator.clipboard.writeText(factorPairsString)
+        .then(() => {
+          alert("Factor pairs copied to clipboard!");
+        })
+        .catch(err => {
+          // Fallback for older browsers
+          alert("Unable to copy. Error: " + err);
+        });
+    }
+  </script>
+</body>
+</html>
