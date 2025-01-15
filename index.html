@@ -1,2 +1,100 @@
-Tools
-<a href='FactorCalc.html'>Fractional Factor Calcluator</a>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Galy's Tools</title>
+  <style>
+    /* Basic reset & styling */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.5;
+      background-color: #f7f9fc;
+      color: #333;
+      padding: 20px;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    header h1 {
+      font-size: 2.4rem;
+      margin-bottom: 10px;
+    }
+    header p {
+      font-size: 1.1rem;
+      color: #666;
+    }
+    /* Tools section styling */
+    .tools {
+      margin: 0 auto;
+      max-width: 800px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .tool-item {
+      background-color: #fff;
+      border: 1px solid #ddd;
+      padding: 15px 20px;
+      border-radius: 6px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .tool-item h2 {
+      font-size: 1.4rem;
+      margin-bottom: 5px;
+      color: #444;
+    }
+    .tool-item p {
+      font-size: 0.95rem;
+      margin-bottom: 10px;
+      color: #666;
+    }
+    .tool-item a {
+      color: #0066cc;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .tool-item a:hover {
+      text-decoration: underline;
+    }
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      font-size: 0.9rem;
+      color: #999;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Galy's Tools</h1>
+    <p>Welcome! Here you’ll find a collection of handy web utilities by <strong>Galygious</strong>.</p>
+  </header>
+
+  <section class="tools">
+    <div class="tool-item">
+      <h2>Fractional Factor Calculator</h2>
+      <p>Factorize numbers into rational pairs, displayed in a convenient multi-table format.</p>
+      <p><a href="FactorCalc.html">Try it Now</a></p>
+    </div>
+    <!-- Add more tool-item blocks here if you like -->
+  </section>
+
+  <footer>
+    <p>© <span id="year"></span> Galygious - All Rights Reserved</p>
+  </footer>
+
+  <script>
+    // Fill the current year automatically
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+
+</body>
+</html>
