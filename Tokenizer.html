@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Text Tokenizer</title>
+  <style>
+    /* Basic reset & styling */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.5;
+      background-color: #f7f9fc;
+      color: #333;
+      padding: 20px;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    header h1 {
+      font-size: 2.4rem;
+      margin-bottom: 10px;
+    }
+    header p {
+      font-size: 1.1rem;
+      color: #666;
+    }
+    /* Tokenizer section styling */
+    .tokenizer {
+      margin: 0 auto;
+      max-width: 800px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .tokenizer-item {
+      background-color: #fff;
+      border: 1px solid #ddd;
+      padding: 15px 20px;
+      border-radius: 6px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .tokenizer-item h2 {
+      font-size: 1.4rem;
+      margin-bottom: 5px;
+      color: #444;
+    }
+    .tokenizer-item p {
+      font-size: 0.95rem;
+      margin-bottom: 10px;
+      color: #666;
+    }
+    .tokenizer-item a {
+      color: #0066cc;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .tokenizer-item a:hover {
+      text-decoration: underline;
+    }
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      font-size: 0.9rem;
+      color: #999;
+    }
+    /* Form styling */
+    .form-container {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    textarea, input[type="text"], input[type="url"], input[type="file"] {
+      width: 100%;
+      padding: 10px;
+      font-size: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    button {
+      padding: 10px 15px;
+      font-size: 1rem;
+      color: white;
+      background-color: #007bff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      width: 150px;
+      align-self: center;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .results {
+      margin-top: 30px;
+      background-color: #fff;
+      padding: 15px 20px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .results pre {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Text Tokenizer</h1>
+    <p>Convert your text into tokens using <strong>tiktoken</strong>.</p>
+  </header>
+
+  <section class="tokenizer">
+    <div class="tokenizer-item">
+      <h2>Tokenize Text</h2>
+      <div class="form-container">
+        <label for="textInput">Enter Text:</label>
+        <textarea id="textInput" rows="4" placeholder="Type your text here..."></textarea>
+        
+        <label for="fileUrl">Or Enter File URL:</label>
+        <input id="fileUrl" type="url" placeholder="https://example.com/yourfile.txt" />
+        
+        <label for="fileUpload">Or Upload a File:</label>
+        <input id="fileUpload" type="file" accept=".txt" />
+        
+        <button onclick="tokenizeText()">Tokenize</button>
+      </div>
+    </div>
+    
+    <div class="tokenizer-item">
+      <h2>Tokenized Output:</h2>
+      <div class="results" id="tokenResults">
+        <p>No tokens generated yet.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p>© <span id="year"></span> Galygious - All Rights Reserved</p>
+  </footer>
+
+  <script type="module">
+    // Fill the current year automatically
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Import the js-tiktoken library
+    import { Tiktoken } from './tiktoken/tiktoken.js'; // Adjust the path as necessary
+
+    // Initialize the tokenizer
+    let encoder;
+    (async () => {
+      // Load the encoder for a specific model, e.g., "gpt2"
+      encoder = await Tiktoken.encoding_for_model("gpt2");
+    })();
+
+    async function tokenizeText() {
+      const textInput = document.getElementById("textInput").value.trim();
+      const fileUrl = document.getElementById("fileUrl").value.trim();
+      const fileUpload = document.getElementById("fileUpload").files[0];
+      const resultsDiv = document.getElementById("tokenResults");
+      
+      let text = "";
+
+      if (textInput) {
+        text = textInput;
+      } else if (fileUrl) {
+        try {
+          const response = await fetch(fileUrl);
+          if (!response.ok) throw new Error('Network response was not ok');
+          text = await response.text();
+        } catch (error) {
+          resultsDiv.innerHTML = `<p>Error fetching file: ${error.message}</p>`;
+          return;
+        }
+      } else if (fileUpload) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          text = event.target.result;
+          processTokenization(text);
+        };
+        reader.onerror = function() {
+          resultsDiv.innerHTML = `<p>Error reading file.</p>`;
+        };
+        reader.readAsText(fileUpload);
+        return; // Wait for FileReader to finish
+      } else {
+        resultsDiv.innerHTML = `<p>Please provide text input, a file URL, or upload a file.</p>`;
+        return;
+      }
+
+      processTokenization(text);
+    }
+
+    async function processTokenization(text) {
+      const resultsDiv = document.getElementById("tokenResults");
+      if (!encoder) {
+        resultsDiv.innerHTML = `<p>Tokenizer is still loading. Please try again shortly.</p>`;
+        return;
+      }
+
+      try {
+        const tokens = encoder.encode(text);
+        resultsDiv.innerHTML = `<pre>${JSON.stringify(tokens, null, 2)}</pre>`;
+      } catch (error) {
+        resultsDiv.innerHTML = `<p>Error during tokenization: ${error.message}</p>`;
+      }
+    }
+  </script>
+
+</body>
+</html>
