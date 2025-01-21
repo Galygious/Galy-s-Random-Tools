@@ -35,9 +35,10 @@
     <p>© <span id="year"></span> Galygious - All Rights Reserved</p>
   </footer>
 
-  <!-- Include Tiktoken Library -->
-  <script src="tiktoken.js"></script>
-  <script>
+  <!-- Include Tiktoken Lite Library -->
+  <script type="module">
+    import { Tiktoken } from './tiktoken/lite.js';
+
     // Automatically fill the current year
     document.getElementById('year').textContent = new Date().getFullYear();
 
@@ -46,9 +47,10 @@
     // Initialize Tiktoken
     async function initializeTokenizer() {
       try {
+        // Initialize with paths relative to Tokenizer.html
         encoder = await Tiktoken.init({
-          wasmPath: 'tiktoken_bg.wasm',
-          encodingPath: 'cl100k_base.json'
+          wasmPath: './tiktoken/tiktoken_bg.wasm',
+          encodingsPath: './tiktoken/encoders/cl100k_base.json'
         });
         console.log('Tiktoken initialized successfully.');
       } catch (error) {
