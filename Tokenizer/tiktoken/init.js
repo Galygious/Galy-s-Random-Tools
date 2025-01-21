@@ -1,6 +1,5 @@
 // @ts-expect-error
 import * as wasm from "./tiktoken_bg.wasm";
-import * as wasm from "./tiktoken_bg.wasm";
 import * as tiktokenBg from "./tiktoken_bg.js";
 import { __wbg_set_wasm } from "./tiktoken_bg.js";
 
