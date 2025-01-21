@@ -1,6 +1,26 @@
 // @ts-expect-error
 import * as wasm from "./tiktoken_bg.wasm";
+import * as wasm from "./tiktoken_bg.wasm";
+import * as tiktokenBg from "./tiktoken_bg.js";
+import { __wbg_set_wasm } from "./tiktoken_bg.js";
+
+// Set the WebAssembly module
+__wbg_set_wasm(wasm);
+
+// Re-export specific items explicitly
+export const { someExport1, someExport2 } = tiktokenBg;
+
+// Optionally, export everything:
 export * from "./tiktoken_bg.js";
+
+// Create an aggregated imports object
+const imports = {
+    wasm,
+    ...tiktokenBg,
+};
+
+export { imports };
+
 import { __wbg_set_wasm } from "./tiktoken_bg.js";
 
 __wbg_set_wasm(wasm);
