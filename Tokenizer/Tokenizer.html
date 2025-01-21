@@ -37,7 +37,7 @@
 
   <!-- Include Tiktoken Lite Library -->
   <script type="module">
-    import { Tiktoken } from './tiktoken/lite.js';
+    import { Tiktoken, init } from './tiktoken/lite/init.js';
 
     // Automatically fill the current year
     document.getElementById('year').textContent = new Date().getFullYear();
@@ -49,7 +49,7 @@
       try {
         // Initialize with paths relative to Tokenizer.html
         encoder = await Tiktoken.init({
-          wasmPath: './tiktoken/tiktoken_bg.wasm',
+          wasmPath: './tiktoken/lite/tiktoken_bg.wasm',
           encodingsPath: './tiktoken/encoders/cl100k_base.json'
         });
         console.log('Tiktoken initialized successfully.');
